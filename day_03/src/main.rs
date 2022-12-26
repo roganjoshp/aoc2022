@@ -56,45 +56,24 @@ fn elf_groups(checklists: &Vec<Vec<char>>, priority_map: &HashMap<char, u32>) ->
         })
         .collect();
 
-    let mut counts: Vec<HashMap<char, i32>> = uniques
+    let badges: Vec<&char> = uniques
         .chunks(3)
         .into_iter()
-        .map(|x| {
-            x.iter().fold(Vec::new(), |mut flat_vec, val| {
-                flat_vec.extend(Vec::from_iter(val.clone()));
-                flat_vec
+        .map(|group| {
+            group.iter().fold(group[0].clone(), |acc, hs| {
+                acc.intersection(hs).cloned().collect()
             })
         })
-        .collect::<Vec<Vec<char>>>()
-        .iter()
-        .map(|x| {
-            x.iter().fold(HashMap::new(), |mut map, val| {
-                map.entry(val.to_owned())
-                    .and_modify(|frq| *frq += 1)
-                    .or_insert(1);
-                map
-            })
-        })
+        .flatten()
         .collect();
 
-    // TODO understand how to make this functional
-    let badges: Vec<&char> = Vec::new();
-
-    // for group in counts.iter() {
-    //     let badge = group
-    //         .iter()
-    //         .filter(|&(&k, v)| *v == 3)
-    //         .collect::<HashMap<&char, i32>>();
-    // }
-
-    // let badges = counts.iter().filter(|&(key, val)| val == 3);
-
-    // let badges = counts
-    //     .iter()
-    //     .map(|&x| x.iter().filter(|(&k, &v)| v == 3).)
-    //     .collect();
-
-    println!("{:?}", counts);
+    let priority: u32 = badges
+        .iter()
+        .map(|&letter| *priority_map.get(letter).unwrap())
+        .collect::<Vec<u32>>()
+        .iter()
+        .sum();
+    println!("SUM: {}", priority);
 }
 
 fn main() {
