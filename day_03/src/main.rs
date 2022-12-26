@@ -44,8 +44,73 @@ fn check_rucksacks(checklists: &Vec<Vec<char>>, priority_map: &HashMap<char, u32
     println!("Total day 1, {}", total_priority);
 }
 
+fn elf_groups(checklists: &Vec<Vec<char>>, priority_map: &HashMap<char, u32>) -> () {
+    // Oops, I didn't need a HashMap but keeping it anyway for posterity for a vec of counters
+    // let chunked: Vec<Vec<char>> = checklists
+    //     .chunks(3)
+    //     .into_iter()
+    //     .map(|x| x.iter().flatten().cloned().collect())
+    //     .collect();
+
+    // let counters: Vec<HashMap<&char, i32>> = chunked
+    //     .iter()
+    //     .map(|x| {
+    //         x.iter().fold(HashMap::new(), |mut map, val| {
+    //             map.entry(val).and_modify(|frq| *frq += 1).or_insert(1);
+    //             map
+    //         })
+    //     })
+    //     .collect();
+
+    // First just get sets of letters
+    let uniques: Vec<HashSet<&char>> = checklists
+        .iter()
+        .map(|x| {
+            x.into_iter().fold(HashSet::new(), |mut letters, val| {
+                letters.insert(val);
+                letters
+            })
+        })
+        .collect();
+
+    // Now chunk, flatten and count
+    let grouped: Vec<Vec<char>> = uniques
+        .chunks(3)
+        .into_iter()
+        .map(|x| {
+            x.into_iter().fold(Vec::new(), |mut flat_vec, val| {
+                flat_vec.extend(Vec::from_iter(val.clone()));
+                flat_vec
+            })
+        })
+        .collect();
+
+    let counts: Vec<HashMap<&char, i32>> = grouped
+        .iter()
+        .map(|x| {
+            x.iter().fold(HashMap::new(), |mut map, val| {
+                map.entry(val).and_modify(|frq| *frq += 1).or_insert(1);
+                map
+            })
+        })
+        .collect();
+
+    let badges = counts
+        .iter()
+        .map(|&dict| dict.iter().filter(|&(&key, &val)| val == 3))
+        .collect();
+
+    // let badges = counts
+    //     .iter()
+    //     .map(|&x| x.iter().filter(|(&k, &v)| v == 3).)
+    //     .collect();
+
+    println!("{:?}", counts);
+}
+
 fn main() {
     let priority_map = build_priority_map();
     let input_data = read_file("./d3_input.txt");
-    check_rucksacks(&input_data, &priority_map)
+    check_rucksacks(&input_data, &priority_map);
+    elf_groups(&input_data, &priority_map);
 }
