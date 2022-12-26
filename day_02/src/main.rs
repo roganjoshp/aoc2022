@@ -26,7 +26,7 @@ impl Move {
     }
 }
 
-fn build_outcome_map<'a>() -> HashMap<Move, i32> {
+fn build_outcome_map() -> HashMap<Move, i32> {
     let my_move = vec!["X", "X", "X", "Y", "Y", "Y", "Z", "Z", "Z"];
     let their_move = vec!["A", "B", "C", "A", "B", "C", "A", "B", "C"];
     let win_loss = vec![3, 0, 6, 6, 3, 0, 0, 6, 3];
@@ -63,10 +63,69 @@ fn play_game_one(all_rows: &Vec<Vec<String>>) -> () {
     }
 
     let total_score = scores + hand_scores;
+
     println!("Part 1 output: {}", total_score);
+}
+
+fn play_game_two(all_rows: &Vec<Vec<String>>) -> () {
+    let mut my_plays: Vec<&str> = Vec::with_capacity(all_rows.len());
+    let mut scores: Vec<i32> = Vec::with_capacity(all_rows.len());
+
+    // TODO how can this be generalised? This is gross
+    for row in all_rows {
+        if row[0] == "A" {
+            if row[1] == "X" {
+                my_plays.push("scissors");
+                scores.push(0);
+            } else if row[1] == "Y" {
+                my_plays.push("rock");
+                scores.push(3);
+            } else {
+                my_plays.push("paper");
+                scores.push(6);
+            }
+        } else if row[0] == "B" {
+            if row[1] == "X" {
+                my_plays.push("rock");
+                scores.push(0);
+            } else if row[1] == "Y" {
+                my_plays.push("paper");
+                scores.push(3);
+            } else {
+                my_plays.push("scissors");
+                scores.push(6);
+            }
+        } else {
+            if row[1] == "X" {
+                my_plays.push("paper");
+                scores.push(0);
+            } else if row[1] == "Y" {
+                my_plays.push("scissors");
+                scores.push(3);
+            } else {
+                my_plays.push("rock");
+                scores.push(6);
+            }
+        }
+    }
+    let total_score: i32 = scores.iter().sum();
+    let hand_scores: i32 = my_plays
+        .iter()
+        .map(|&play| match play {
+            "rock" => 1,
+            "paper" => 2,
+            "scissors" => 3,
+            _ => 0,
+        })
+        .collect::<Vec<i32>>()
+        .iter()
+        .sum();
+    let soln: i32 = total_score + hand_scores;
+    println!("Game 2, {}", soln);
 }
 
 fn main() {
     let all_rows = read_file("./d2_input.txt");
     play_game_one(&all_rows);
+    play_game_two(&all_rows);
 }
