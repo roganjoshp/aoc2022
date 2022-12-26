@@ -59,12 +59,11 @@ fn elf_groups(checklists: &Vec<Vec<char>>, priority_map: &HashMap<char, u32>) ->
     let badges: Vec<&char> = uniques
         .chunks(3)
         .into_iter()
-        .map(|group| {
+        .flat_map(|group| {
             group.iter().fold(group[0].clone(), |acc, hs| {
                 acc.intersection(hs).cloned().collect()
             })
         })
-        .flatten()
         .collect();
 
     let priority: u32 = badges
