@@ -68,7 +68,7 @@ fn elf_groups(checklists: &Vec<Vec<char>>, priority_map: &HashMap<char, u32>) ->
 
     let priority: u32 = badges
         .iter()
-        .map(|&letter| *priority_map.get(letter).unwrap())
+        .map(|&letter| *priority_map.get(letter).unwrap_or(&0))
         .collect::<Vec<u32>>()
         .iter()
         .sum();
