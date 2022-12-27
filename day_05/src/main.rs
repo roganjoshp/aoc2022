@@ -1,30 +1,44 @@
+// use itertools::Itertools;
 use std::collections::{HashMap, VecDeque};
 use std::fs;
 
 struct Dock {
-    stacks: HashMap<usize, Stack>,
+    pub stacks: HashMap<usize, Stack>,
 }
 
 impl Dock {
     fn new(stacks: HashMap<usize, Stack>) -> Self {
         Dock { stacks: stacks }
     }
+
+    fn move_crates(&mut self, qty: &usize, from: &usize, to: &usize) -> () {
+        for i in 0..=*qty {
+            let from_stack = self.stacks.get_mut(from).unwrap();
+            let this_crate = from_stack.remove_crate().unwrap();
+            let to_stack = self.stacks.get_mut(to).unwrap();
+            to_stack.add_crate(this_crate);
+        }
+    }
 }
 
 #[derive(Debug)]
 struct Stack {
-    crates: VecDeque<Crate>,
+    pub crates: VecDeque<Crate>,
 }
 
 impl Stack {
     fn start_new(new_crate: Crate) -> Self {
         Stack {
-            crates: VecDeque::from(vec![new_crate]),
+            crates: VecDeque::from([new_crate]),
         }
     }
 
     fn add_crate(&mut self, new_crate: Crate) -> () {
         self.crates.push_back(new_crate);
+    }
+
+    fn remove_crate(&mut self) -> Option<Crate> {
+        self.crates.pop_back()
     }
 }
 
@@ -39,7 +53,7 @@ impl Crate {
     }
 }
 
-fn parse_file(file: &str) -> (Vec<Vec<char>>, Vec<String>) {
+fn parse_file(file: &str) -> (Vec<Vec<char>>, Vec<Vec<String>>) {
     let contents = fs::read_to_string(file).expect("Cannot open file");
     let split_contents: Vec<&str> = contents.split("\n").collect();
     let split_point = split_contents
@@ -54,10 +68,14 @@ fn parse_file(file: &str) -> (Vec<Vec<char>>, Vec<String>) {
     // Build from the bottom up
     stacks.reverse();
 
-    println!("{:?}", &moves[1..]);
-    let moves: Vec<String> = moves.iter().map(|&x| x.split(" ").collect()).collect();
+    let moves: Vec<Vec<String>> = moves
+        .clone()
+        .iter()
+        .map(|&x| x.split(" ").map(|y| y.to_owned()).collect())
+        .collect();
     return (stacks, moves);
 }
+
 fn build_dock(initial_stacks: &Vec<Vec<char>>) -> Dock {
     // First find each of the stacks
     let starter_crates: Vec<(usize, char)> = initial_stacks[1..]
@@ -74,7 +92,6 @@ fn build_dock(initial_stacks: &Vec<Vec<char>>) -> Dock {
         .collect();
 
     // Now build them up
-
     let all_stacks = starter_crates
         .iter()
         .fold(HashMap::<usize, Stack>::new(), |mut map, val| {
@@ -87,9 +104,19 @@ fn build_dock(initial_stacks: &Vec<Vec<char>>) -> Dock {
     Dock::new(all_stacks)
 }
 
-// fn build_dock(stacks: )
+fn process_moves(dock: &mut Dock, moves: &Vec<Vec<String>>) -> () {
+    for m in moves.iter() {
+        dock.move_crates(
+            &m[1].parse::<usize>().unwrap(),
+            &m[3].parse::<usize>().unwrap(),
+            &m[5].parse::<usize>().unwrap(),
+        )
+    }
+}
 
 fn main() {
     let (stacks, moves) = parse_file("./d5_input.txt");
-    let dock = build_dock(&stacks);
+    let mut dock = build_dock(&stacks);
+    process_moves(&mut dock, &moves);
+    println!("{:?}", dock.stacks);
 }
