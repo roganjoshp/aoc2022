@@ -1,8 +1,11 @@
 // use itertools::Itertools;
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::fs;
 
+use itertools::Itertools;
+
 struct Dock {
+    // TODO: We actually want to keep the ordering so maybe a HashMap isn't best
     pub stacks: HashMap<usize, Stack>,
 }
 
@@ -12,33 +15,53 @@ impl Dock {
     }
 
     fn move_crates(&mut self, qty: &usize, from: &usize, to: &usize) -> () {
-        for i in 0..=*qty {
+        for i in 0..*qty {
             let from_stack = self.stacks.get_mut(from).unwrap();
             let this_crate = from_stack.remove_crate().unwrap();
             let to_stack = self.stacks.get_mut(to).unwrap();
             to_stack.add_crate(this_crate);
         }
     }
+
+    fn get_stack_top(&self) -> () {
+        let keys: Vec<&usize> = self
+            .stacks
+            .keys()
+            .into_iter()
+            .sorted_by_key(|&x| x)
+            .collect();
+        let tops: String = keys
+            .iter()
+            .map(|&x| self.stacks.get(&x).unwrap().get_top())
+            .collect::<Vec<char>>()
+            .iter()
+            .collect();
+        println!("{:?}", tops);
+    }
 }
 
 #[derive(Debug)]
 struct Stack {
-    pub crates: VecDeque<Crate>,
+    pub crates: Vec<Crate>,
 }
 
 impl Stack {
     fn start_new(new_crate: Crate) -> Self {
         Stack {
-            crates: VecDeque::from([new_crate]),
+            crates: Vec::from([new_crate]),
         }
     }
 
     fn add_crate(&mut self, new_crate: Crate) -> () {
-        self.crates.push_back(new_crate);
+        self.crates.push(new_crate);
     }
 
     fn remove_crate(&mut self) -> Option<Crate> {
-        self.crates.pop_back()
+        self.crates.pop()
+    }
+
+    fn get_top(&self) -> char {
+        self.crates.last().unwrap().id
     }
 }
 
@@ -68,8 +91,7 @@ fn parse_file(file: &str) -> (Vec<Vec<char>>, Vec<Vec<String>>) {
     // Build from the bottom up
     stacks.reverse();
 
-    let moves: Vec<Vec<String>> = moves
-        .clone()
+    let moves: Vec<Vec<String>> = moves[1..]
         .iter()
         .map(|&x| x.split(" ").map(|y| y.to_owned()).collect())
         .collect();
@@ -118,5 +140,5 @@ fn main() {
     let (stacks, moves) = parse_file("./d5_input.txt");
     let mut dock = build_dock(&stacks);
     process_moves(&mut dock, &moves);
-    println!("{:?}", dock.stacks);
+    dock.get_stack_top();
 }
