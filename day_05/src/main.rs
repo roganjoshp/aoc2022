@@ -15,12 +15,10 @@ impl Dock {
     }
 
     fn move_crates(&mut self, qty: &usize, from: &usize, to: &usize) -> () {
-        for i in 0..*qty {
-            let from_stack = self.stacks.get_mut(from).unwrap();
-            let this_crate = from_stack.remove_crate().unwrap();
-            let to_stack = self.stacks.get_mut(to).unwrap();
-            to_stack.add_crate(this_crate);
-        }
+        let from_stack = self.stacks.get_mut(from).unwrap();
+        let crates = from_stack.remove_crates(*qty);
+        let to_stack = self.stacks.get_mut(to).unwrap();
+        to_stack.add_crates(crates);
     }
 
     fn get_stack_top(&self) -> () {
@@ -32,7 +30,7 @@ impl Dock {
             .collect();
         let tops: String = keys
             .iter()
-            .map(|&x| self.stacks.get(&x).unwrap().get_top())
+            .map(|&x| self.stacks.get(x).unwrap().get_top())
             .collect::<Vec<char>>()
             .iter()
             .collect();
@@ -40,7 +38,7 @@ impl Dock {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Stack {
     pub crates: Vec<Crate>,
 }
@@ -56,8 +54,17 @@ impl Stack {
         self.crates.push(new_crate);
     }
 
+    fn add_crates(&mut self, crates: Vec<Crate>) -> () {
+        self.crates.extend(crates.into_iter());
+    }
+
     fn remove_crate(&mut self) -> Option<Crate> {
         self.crates.pop()
+    }
+
+    fn remove_crates(&mut self, num_crates: usize) -> Vec<Crate> {
+        let crates: Vec<Crate> = self.crates.split_off(self.crates.len() - num_crates);
+        crates
     }
 
     fn get_top(&self) -> char {
@@ -65,7 +72,7 @@ impl Stack {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct Crate {
     id: char,
 }
