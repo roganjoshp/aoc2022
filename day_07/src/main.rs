@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
+use std::rc::Rc;
 
 fn read_file(filename: &str) -> Vec<String> {
     let file = fs::read_to_string(filename).expect("Can't read file");
@@ -7,43 +9,38 @@ fn read_file(filename: &str) -> Vec<String> {
     rows
 }
 
-#[derive(Default, Debug)]
-struct File<'a> {
-    name: &'a str,
-    size: usize,
+#[derive(Default)]
+struct Filesystem {
+    directories: HashMap<String, Rc<RefCell<Directory>>>,
 }
 
-#[derive(Default, Debug)]
-struct Directory<'a> {
-    name: &'a str,
-    parent: Option<&'a str>,
-    files: Vec<File<'a>>,
-    children: Vec<&'a str>,
-}
-struct FileSystem<'a> {
-    directories: HashMap<&'a str, Directory<'a>>,
-}
-
-impl<'a> Directory<'a> {
-    fn new(name: &'a str, parent: Option<&'a str>) -> Self {
-        Directory {
-            name: name,
-            parent: parent,
-            ..Default::default()
-        }
+impl Filesystem {
+    fn new() -> Self {
+        Filesystem::default()
     }
 
-    fn add_file(mut self, name: &'a str, size: usize) -> () {
-        self.files.push(File::new(name, size));
-    }
-
-    fn add_child(mut self, name: &'a str) -> () {
-        self.children.push(name);
+    fn add_child(&mut self, child: Rc<RefCell<Directory>>) {
+        self.directories
+            .entry(child.borrow().name.to_string())
+            .or_insert(Rc::clone(&child));
     }
 }
 
-impl<'a> File<'a> {
-    fn new(name: &'a str, size: usize) -> Self {
+#[derive(Default)]
+struct Directory {
+    name: String,
+    parent: Rc<RefCell<Self>>,
+    files: HashMap<String, File>,
+    children: HashMap<String, Rc<RefCell<Self>>>,
+}
+
+struct File {
+    name: String,
+    size: u32,
+}
+
+impl File {
+    fn new(name: String, size: u32) -> Self {
         File {
             name: name,
             size: size,
@@ -51,39 +48,36 @@ impl<'a> File<'a> {
     }
 }
 
-impl<'a> FileSystem<'a> {
-    fn new() -> Self {
-        FileSystem {
-            directories: HashMap::new(),
+impl Directory {
+    fn new(name: String, parent: Rc<RefCell<Self>>) -> Self {
+        Directory {
+            name: name,
+            parent: parent,
+            ..Default::default()
         }
     }
 
-    fn enter_directory(
-        &mut self,
-        dir_name: &'a str,
-        current_directory: Option<&'a str>,
-    ) -> &mut Directory<'a> {
-        self.directories
-            .entry(dir_name)
-            .or_insert(Directory::new(dir_name, current_directory))
+    fn add_child_dir(&mut self, child: Rc<RefCell<Directory>>) {
+        self.children
+            .entry(child.borrow().name.to_string())
+            .or_insert(Rc::new(RefCell::new(Directory::new(
+                self.name.to_string(),
+                Rc::clone(&self.parent),
+            ))));
     }
 
-    fn exit_directory(&self, curr_dir: &'a str) -> Result<&Directory, &str> {
-        let parent_name = self.directories.get(curr_dir).unwrap().parent;
-        match parent_name {
-            Some(parent_name) => Ok(self.directories.get(parent_name).unwrap()),
-            None => Err("Parent not found"),
-        }
+    fn add_file(&mut self, name: &str, size: u32) {
+        self.files
+            .entry(name.to_string())
+            .or_insert(File::new(name.to_string(), size));
     }
-}
 
-fn run_tree(files: Vec<String>) -> () {
-    let filesystem = FileSystem::new();
+    fn descend(self, name: String) -> Rc<RefCell<Directory>> {
+        Rc::clone(&self.children.get(&name).unwrap())
+    }
 
-    for item in files.iter() {
-        let command = item;
-
-        match command {}
+    fn ascend(self) -> Rc<RefCell<Self>> {
+        self.parent
     }
 }
 
