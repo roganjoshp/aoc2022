@@ -50,15 +50,15 @@ impl Forest {
     }
 
     fn view_from_left(&self, row: usize, column: usize, height: u32) -> bool {
-        self.trees[(row * self.num_columns)..(row * self.num_columns) + column]
-            .iter()
-            .all(|&x| x < height)
+        let start = row * self.num_columns;
+        let end = (row * self.num_columns) + column;
+        self.trees[start..end].iter().all(|&x| x < height)
     }
 
     fn view_from_right(&self, row: usize, column: usize, height: u32) -> bool {
-        let start = ((row - 1) * self.num_columns) + column + 1;
-        let end = row * self.num_columns;
-        self.trees[start..=end].iter().all(|&x| x < height)
+        let start = (row * self.num_columns) + column + 1;
+        let end = (row + 1) * self.num_columns;
+        self.trees[start..end].iter().all(|&x| x < height)
     }
 }
 
@@ -75,13 +75,15 @@ fn count_visible_trees(forest: &Forest) -> usize {
         })
         .collect::<HashSet<_>>()
         .len()
+        + 2 * (forest.num_rows - 1)
+        + 2 * (forest.num_columns - 1)
 }
 fn main() {
     let forest = read_input("./d8_input.txt");
-    // println!(
-    //     "{:?}",
-    //     forest.view_from_bottom(97, 10, forest.get_tree_height(97, 10))
-    // );
+    println!(
+        "{:?}",
+        forest.view_from_bottom(97, 10, forest.get_tree_height(97, 10))
+    );
     let count_visible = count_visible_trees(&forest);
     println!("{count_visible}");
 }
